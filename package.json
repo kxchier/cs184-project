@@ -1,0 +1,13 @@
+{
+  "name": "vfold-rigid-viewer",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "python3 -m http.server 8000 --bind 127.0.0.1",
+    "test": "python3 -m unittest discover -s tests -v && node --test tests/*.test.js",
+    "experiment": "node experiments/batch.mjs"
+  },
+  "dependencies": {
+    "three": "0.170.0"
+  }
+}

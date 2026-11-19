@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "name": "symmetric-vfold-001",
+  "model": "rigid_ideal_hinges",
+  "units": "SI",
+  "frame": "spine_y_symmetric_pages_z_up",
+  "geometry": {
+    "attachment_length_m": 0.08,
+    "ridge_length_m": 0.10,
+    "crease_angle_deg": 30.0
+  },
+  "material": {},
+  "opening_angles_deg": [0, 30, 60, 90, 120, 150, 180]
+}

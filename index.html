@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>V-fold · Material-effects milestone</title>
+  <link rel="stylesheet" href="viewer/style.css">
+  <script type="importmap">
+    {"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}
+  </script>
+</head>
+<body>
+  <header><div class="eyebrow">a study in paper & folds</div><h1>V-fold pop-ups</h1><p>Rigid baseline & flexible panels · ideal hinges · uncalibrated numerical model</p></header>
+  <main>
+    <section id="viewport" aria-label="Interactive 3D V-fold mechanism">
+      <div class="view-note">drag to turn · scroll to zoom · right-drag to pan</div>
+      <div id="status" role="status">Loading 3D viewer…</div>
+    </section>
+    <aside>
+      <label for="model-mode">Model</label>
+      <select id="model-mode"><option value="rigid">Rigid geometric baseline</option><option value="flexible">Flexible panels under gravity</option></select>
+      <label class="check"><input id="reference-overlay" type="checkbox"> Show rigid reference</label>
+      <p id="solver-status" role="status">Rigid baseline · prescribed geometry</p>
+      <h2>Book opening</h2>
+      <label for="angle">Opening angle <output id="angle-value">90°</output></label>
+      <input id="angle" type="range" min="0" max="180" step="any" value="90">
+      <div class="endpoints"><span>0° closed</span><span>180° flat</span></div>
+      <label class="exact" for="exact-angle">Exact angle (degrees)</label>
+      <input id="exact-angle" type="number" min="0" max="180" step="any" value="90">
+      <button id="reset" type="button">Reset camera</button>
+      <details><summary>Material & solver settings</summary>
+        <p class="muted">Illustrative, uncalibrated values. Fixed-angle equilibrium, not physical validation.</p>
+        <label for="mass">Mass per area (kg/m²)</label><input id="mass" type="number" min="0" step="any" value="0.08">
+        <label for="bending">Bending stiffness (N·m)</label><input id="bending" type="number" min="0" step="any" value="0.00002">
+        <label for="stretching">Stretching modulus (N/m)</label><input id="stretching" type="number" min="0.001" step="any" value="100">
+        <label for="resolution">Subdivisions per edge</label><select id="resolution"><option>4</option><option>8</option><option>12</option></select>
+        <label class="check"><input id="gravity" type="checkbox" checked> Gravity (−z, 9.81 m/s²)</label>
+        <p class="muted">ν = 0.3 · force residual ≤ 0.005 N/m² · limit 6000 iterations. No contact or self-intersection handling.</p>
+      </details>
+      <button id="export-json" type="button">Export JSON</button>
+      <button id="export-csv" type="button">Export CSV</button>
+      <h2>The folds</h2>
+      <ul class="legend"><li><i class="left"></i>Left panel O–L–C</li><li><i class="right"></i>Right panel O–C–R</li><li><i class="hinge"></i>Hinges O–L, O–R, O–C</li></ul>
+      <details><summary>Measurements & model notes</summary>
+      <p>O: spine origin · L/R: wing tips · C: ridge tip<br>IL/IR: panel interiors · FL/FR: free-edge midpoints</p>
+      <h2>Landmarks · metres</h2>
+      <table><thead><tr><th>ID</th><th>x</th><th>y</th><th>z</th></tr></thead><tbody id="coordinates"></tbody></table>
+      <h2>Reference frame</h2>
+      <p>+x: right page · +y: spine · +z: up<br>Gravity: (0, 0, −9.81) m/s²</p>
+      <p id="geometry"></p>
+      <p class="muted">Zero-thickness surfaces. At 0° panels coincide; at 180° panels lie on the pages. These are ideal kinematic limits.</p>
+      </details>
+    </aside>
+  </main>
+  <script type="module" src="viewer/main.js"></script>
+</body>
+</html>
