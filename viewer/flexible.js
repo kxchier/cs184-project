@@ -2,6 +2,19 @@
 import { solve } from './model.js';
 export const defaultMaterial = { mass_per_area_kg_m2: 0.08, bending_stiffness_N_m: 0.00002,
   stretching_modulus_N_m: 100, poisson_ratio: 0.3, illustrative_uncalibrated: true };
+
+export function uniformSheetMaterial(thickness, density, youngModulus) {
+  if (![thickness, density, youngModulus].every(value => Number.isFinite(value) && value > 0)) {
+    throw Error('Enter positive thickness, density, and Young’s modulus for a uniform sheet.');
+  }
+  const nu = defaultMaterial.poisson_ratio;
+  return {
+    ...defaultMaterial,
+    mass_per_area_kg_m2: density * thickness,
+    stretching_modulus_N_m: youngModulus * thickness,
+    bending_stiffness_N_m: youngModulus * thickness ** 3 / (12 * (1 - nu ** 2)),
+  };
+}
 export const defaultSolver = { max_iterations: 6000, residual_tolerance_N_m2: 0.005,
   lbfgs_history: 12, max_line_search: 40, armijo: 0.0001 };
 const dot = (a,b) => a.reduce((s,v,i) => s+v*b[i],0);

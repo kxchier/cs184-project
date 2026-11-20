@@ -69,6 +69,16 @@ the [rigid model](model.md). Energies are in joules and position gradients in ne
 These settings are independent. They were not measured from a particular paper
 or calculated from its thickness.
 
+### Uniform sheet preset
+
+With thickness `t` in metres, bulk density `ρ` in kg/m³ and Young's modulus
+`E` in Pa, the viewer sets mass per area to `ρt`, stretching modulus to
+`Et`, and bending stiffness to `Et³ / [12(1 − ν²)]`. The same thickness is
+used to render both pages and panels. The initial 0.1 mm, 800 kg/m³, and
+218.4 MPa values are illustrative. They match the default mass per area
+and bending stiffness at 0.1 mm. The pages remain rigid and the solver
+does not model contact between the rendered surfaces.
+
 ### B-flute cardboard preset
 
 The preset uses 5.158 N·m from the mean machine-direction B-flute bending
@@ -76,8 +86,9 @@ stiffness in Table 3 of [Mrówczyński et al. (2023)](https://doi.org/10.15376/b
 The stretching modulus is estimated as 2.53 × 10⁶ N/m by summing Young's
 modulus times thickness for the two flat liners in Table 2. Mass per area is
 0.450 kg/m², from a [comparable B-flute product](https://packhelp.com/help/topic/paperboard-use-manufacture-mailer-boxes/).
-The nominal 3.2 mm thickness is descriptive. The solver applies the effective
-stiffnesses in all directions and treats the panels as zero-thickness sheets.
+The preset sets the viewer's visual thickness to 3.2 mm for the pages and
+panels. The solver applies the effective stiffnesses in all directions and
+treats the panels as zero-thickness sheets.
 
 ## Mesh and folds
 

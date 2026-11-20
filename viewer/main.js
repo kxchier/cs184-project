@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { solve, validate } from './model.js';
-import { buildMesh, relax, sampleMarkers, defaultMaterial, defaultSolver, makeReport, reportCSV } from './flexible.js';
+import { buildMesh, relax, sampleMarkers, defaultMaterial, defaultSolver, makeReport, reportCSV, uniformSheetMaterial } from './flexible.js';
 
 const viewport = document.querySelector('#viewport');
 const status = document.querySelector('#status');
@@ -83,10 +83,46 @@ async function start() {
     scene.add(mesh);
     return mesh;
   }
-  function setSurface(mesh, points, indices) {
-    mesh.geometry.setAttribute('position', new THREE.Float32BufferAttribute(points.flat(), 3));
+  function setSurface(mesh, points, indices, thickness = 0, uv) {
+    const positions = points.flat();
+    mesh.geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
     mesh.geometry.setIndex(indices);
+    mesh.geometry.deleteAttribute('normal');
     mesh.geometry.computeVertexNormals();
+    if (thickness > 0) {
+      const normals = mesh.geometry.getAttribute('normal').array;
+      const half = thickness / 2;
+      const front = positions.map((value, i) => value + half * normals[i]);
+      const back = positions.map((value, i) => value - half * normals[i]);
+      const shell = front.concat(back);
+      const shellIndices = indices.slice();
+      const shellUv = uv ? [...uv, ...uv] : null;
+      const boundary = new Map();
+      for (let i = 0; i < indices.length; i += 3) {
+        const [a, b, c] = indices.slice(i, i + 3);
+        shellIndices.push(points.length + c, points.length + b, points.length + a);
+        for (const [start, end] of [[a, b], [b, c], [c, a]]) {
+          const reverse = `${end},${start}`;
+          if (!boundary.delete(reverse)) boundary.set(`${start},${end}`, [start, end]);
+        }
+      }
+      // Duplicate rim vertices to keep a sharp cut edge between the two faces.
+      for (const [a, b] of boundary.values()) {
+        const first = shell.length / 3;
+        for (const [face, index] of [[front, b], [front, a], [back, a], [back, b]]) {
+          shell.push(...face.slice(3 * index, 3 * index + 3));
+          if (shellUv) shellUv.push(uv[2 * index], uv[2 * index + 1]);
+        }
+        shellIndices.push(first, first + 1, first + 2, first, first + 2, first + 3);
+      }
+      mesh.geometry.setAttribute('position', new THREE.Float32BufferAttribute(shell, 3));
+      mesh.geometry.setIndex(shellIndices);
+      mesh.geometry.deleteAttribute('normal');
+      mesh.geometry.computeVertexNormals();
+      uv = shellUv;
+    }
+    if (uv) mesh.geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    else mesh.geometry.deleteAttribute('uv');
     mesh.geometry.computeBoundingSphere();
   }
   function line(color, radius) {
@@ -162,6 +198,10 @@ async function start() {
   let generation=0, currentReport=null;
   const modelMode=document.querySelector('#model-mode');
   const materialPreset = document.querySelector('#material-preset');
+  const thicknessInput = document.querySelector('#thickness');
+  const uniformProperties = document.querySelector('#uniform-sheet-properties');
+  const densityInput = document.querySelector('#density');
+  const youngModulusInput = document.querySelector('#young-modulus');
   const bFluteNote = document.querySelector('#b-flute-note');
   const materialInputs = {
     mass_per_area_kg_m2: document.querySelector('#mass'),
@@ -174,17 +214,20 @@ async function start() {
     stretching_modulus_N_m: 2.53e6,
   };
   let customMaterial = Object.values(materialInputs).map(input => input.value);
+  let customThickness = thicknessInput.value;
+  let uniformThickness = '0.1';
+  let activePreset = 'custom';
   const solverStatus=document.querySelector('#solver-status');
   const exports=[document.querySelector('#export-json'),document.querySelector('#export-csv')];
-  function renderMesh(mesh,positions) {
+  function renderMesh(mesh,positions,thickness) {
     const points=Array.from({length:positions.length/3},(_,i)=>positions.slice(i*3,i*3+3));
     const isCardboard = materialPreset.value === 'b-flute' && modelMode.value === 'flexible';
     if (isCardboard) kraftTexture ??= createKraftTexture();
     panels.forEach((panel, side) => {
-      setSurface(panel, points, mesh.triangles.filter(t => t.panel === side).flatMap(t => t.ids));
+      let uv;
       if (isCardboard) {
         // Use the flat panel's metric coordinates so grain follows the mesh as it bends.
-        const uv = new Float32Array(points.length * 2);
+        uv = new Float32Array(points.length * 2);
         const beta = g.crease_angle_deg * Math.PI / 180;
         for (const [key, index] of mesh.maps[side]) {
           const [u, v] = key.split(',').map(Number);
@@ -193,10 +236,8 @@ async function start() {
           uv[2 * index] = along / (mesh.resolution * size * 2);
           uv[2 * index + 1] = across / (mesh.resolution * size * 2) + side * 0.5;
         }
-        panel.geometry.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
-      } else {
-        panel.geometry.deleteAttribute('uv');
       }
+      setSurface(panel, points, mesh.triangles.filter(t => t.panel === side).flatMap(t => t.ids), thickness, uv);
       const map = isCardboard ? kraftTexture : null;
       if (panel.material.map !== map) {
         panel.material.map = map;
@@ -221,21 +262,34 @@ async function start() {
     try {
       const resolution=Number(document.querySelector('#resolution').value);
       const mesh=buildMesh(config,angle,resolution);
-      const material = { ...defaultMaterial };
+      const isUniform = activePreset === 'uniform';
+      if (thicknessInput.value === '' || !thicknessInput.validity.valid) {
+        throw Error('Enter a valid thickness.');
+      }
+      const thickness = thicknessInput.valueAsNumber / 1000;
+      const density = densityInput.valueAsNumber;
+      const youngModulus = youngModulusInput.valueAsNumber * 1e6;
+      const material = isUniform
+        ? uniformSheetMaterial(thickness, density, youngModulus)
+        : { ...defaultMaterial };
       const gravity=document.querySelector('#gravity').checked?[0,0,-9.81]:[0,0,0];
       for (const [property, input] of Object.entries(materialInputs)) {
+        if (isUniform) {
+          input.value = material[property];
+          continue;
+        }
         if(input.value===''||!input.validity.valid) throw Error('Enter valid material settings.');
         material[property] = Number(input.value);
       }
       const half=angle*Math.PI/360;
       for(const [i,sign] of [[0,-1],[1,1]]) {
         const x=sign*size*1.3*Math.sin(half),z=size*1.3*Math.cos(half);
-        setSurface(pages[i],[[0,-size*.35,0],[x,-size*.35,z],[x,size*1.45,z],[0,size*1.45,0]],[0,1,2,0,2,3]);
+        setSurface(pages[i],[[0,-size*.35,0],[x,-size*.35,z],[x,size*1.45,z],[0,size*1.45,0]],[0,1,2,0,2,3],thickness);
         setSurface(overlay[i],Array.from({length:mesh.reference.length/3},(_,j)=>mesh.reference.slice(j*3,j*3+3)),mesh.triangles.filter(t=>t.panel===i).flatMap(t=>t.ids));
         overlay[i].visible=document.querySelector('#reference-overlay').checked;
       }
       slider.value=angle;exact.value=angle;document.querySelector('#angle-value').textContent=`${angle}°`;
-      renderMesh(mesh,mesh.reference);
+      renderMesh(mesh,mesh.reference,thickness);
       let result={positions:mesh.reference,iterations:0,residual_N_m2:0,converged:true,reason:'prescribed_geometry'};
       const flexible=modelMode.value==='flexible';let computationMs=0;
       if(flexible) {
@@ -250,10 +304,14 @@ async function start() {
             if(token!==generation)return;
           }
         }while(!step.done);
-        result=step.value;renderMesh(mesh,result.positions);
+        result=step.value;renderMesh(mesh,result.positions,thickness);
       }
       if(token!==generation)return;
       currentReport=makeReport(config,angle,mesh,material,defaultSolver,result,computationMs,gravity);
+      currentReport.rendered_thickness_m = thickness;
+      if (flexible && isUniform) {
+        currentReport.uniform_sheet = { thickness_m: thickness, density_kg_m3: density, young_modulus_Pa: youngModulus };
+      }
       if(!flexible) {
         currentReport.model='rigid_ideal_hinges';currentReport.material={};currentReport.solver_settings=null;
         currentReport.convergence={converged:null,reason:'not_applicable_prescribed_geometry',iterations:0,residual_N_m2:null};
@@ -266,15 +324,30 @@ async function start() {
     }catch(error) {if(token===generation) {solverStatus.textContent=error.message;solverStatus.classList.add('unconverged');}}
   }
   materialPreset.addEventListener('change', () => {
-    const isBFlute = materialPreset.value === 'b-flute';
-    bFluteNote.hidden = !isBFlute;
-    if (isBFlute) {
+    if (activePreset === 'custom') {
       customMaterial = Object.values(materialInputs).map(input => input.value);
+      customThickness = thicknessInput.value;
+    } else if (activePreset === 'uniform') {
+      uniformThickness = thicknessInput.value;
+    }
+    activePreset = materialPreset.value;
+    const isBFlute = activePreset === 'b-flute';
+    const isUniform = activePreset === 'uniform';
+    bFluteNote.hidden = !isBFlute;
+    uniformProperties.hidden = !isUniform;
+    thicknessInput.readOnly = isBFlute;
+    for (const input of Object.values(materialInputs)) input.readOnly = isUniform;
+    if (isBFlute) {
+      thicknessInput.value = 3.2;
       for (const [property, input] of Object.entries(materialInputs)) {
         input.value = bFlute[property];
       }
       modelMode.value = 'flexible';
+    } else if (isUniform) {
+      thicknessInput.value = uniformThickness;
+      modelMode.value = 'flexible';
     } else {
+      thicknessInput.value = customThickness;
       Object.values(materialInputs).forEach((input, index) => {
         input.value = customMaterial[index];
       });
@@ -284,8 +357,14 @@ async function start() {
   for (const input of Object.values(materialInputs)) {
     input.addEventListener('input', () => {
       materialPreset.value = 'custom';
+      activePreset = 'custom';
       bFluteNote.hidden = true;
+      thicknessInput.readOnly = false;
     });
+    input.addEventListener('change', () => update(Number(slider.value)));
+  }
+  thicknessInput.addEventListener('change', () => update(Number(slider.value)));
+  for (const input of [densityInput, youngModulusInput]) {
     input.addEventListener('change', () => update(Number(slider.value)));
   }
   for(const id of ['model-mode','resolution','gravity']) document.querySelector('#'+id).addEventListener('change',()=>update(Number(exact.value)));
