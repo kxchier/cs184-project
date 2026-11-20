@@ -30,6 +30,12 @@
       <button id="reset" type="button">Reset camera</button>
       <details><summary>Material & solver settings</summary>
         <p class="muted">Illustrative, uncalibrated values. Fixed-angle equilibrium, not physical validation.</p>
+        <label for="material-preset">Material preset</label>
+        <select id="material-preset">
+          <option value="custom">Custom</option>
+          <option value="b-flute">B-flute cardboard (estimated)</option>
+        </select>
+        <p id="b-flute-note" class="muted" hidden>Nominal thickness 3.2 mm. The simulation uses effective sheet stiffness and ideal hinges. <a href="https://doi.org/10.15376/biores.18.4.7611-7628">Stiffness source</a></p>
         <label for="mass">Mass per area (kg/m²)</label><input id="mass" type="number" min="0" step="any" value="0.08">
         <label for="bending">Bending stiffness (N·m)</label><input id="bending" type="number" min="0" step="any" value="0.00002">
         <label for="stretching">Stretching modulus (N/m)</label><input id="stretching" type="number" min="0.001" step="any" value="100">

@@ -7,6 +7,36 @@ import { buildMesh, relax, sampleMarkers, defaultMaterial, defaultSolver, makeRe
 const viewport = document.querySelector('#viewport');
 const status = document.querySelector('#status');
 
+function createKraftTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 512;
+  const context = canvas.getContext('2d');
+  let seed = 981;
+  const random = () => {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+    return seed / 2 ** 32;
+  };
+  const grain = context.createImageData(canvas.width, canvas.height);
+  for (let i = 0; i < grain.data.length; i += 4) {
+    const offset = (random() - 0.5) * 30;
+    grain.data.set([184 + offset, 142 + offset, 96 + offset, 255], i);
+  }
+  context.putImageData(grain, 0, 0);
+  context.lineWidth = 0.65;
+  for (let i = 0; i < 2800; i++) {
+    const x = random() * canvas.width;
+    const y = random() * canvas.height;
+    context.strokeStyle = random() < 0.5 ? '#67472a30' : '#fbe2b643';
+    context.beginPath();
+    context.moveTo(x, y);
+    context.lineTo(x + 1 + random() * 5, y + (random() - 0.5) * 3);
+    context.stroke();
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
 async function start() {
   const response = await fetch('./configs/baseline.json');
   if (!response.ok) throw new Error(`Configuration request failed: ${response.status}`);
@@ -75,6 +105,8 @@ async function start() {
   }
   const pages = [surface('#e4e8eb'), surface('#edf0f2')];
   const panels = [surface('#879ca6', true), surface('#b3bdc4', true)];
+  const panelColors = panels.map(panel => panel.material.color.clone());
+  let kraftTexture;
   const hinges = [line('#687984', size * 0.004), line('#687984', size * 0.004), line('#687984', size * 0.004)];
   const freeEdges = [line('#637985', size * 0.002), line('#7e8d97', size * 0.002)];
   const overlay = panels.map(() => {
@@ -129,11 +161,50 @@ async function start() {
   const exact = document.querySelector('#exact-angle');
   let generation=0, currentReport=null;
   const modelMode=document.querySelector('#model-mode');
+  const materialPreset = document.querySelector('#material-preset');
+  const bFluteNote = document.querySelector('#b-flute-note');
+  const materialInputs = {
+    mass_per_area_kg_m2: document.querySelector('#mass'),
+    bending_stiffness_N_m: document.querySelector('#bending'),
+    stretching_modulus_N_m: document.querySelector('#stretching'),
+  };
+  const bFlute = {
+    mass_per_area_kg_m2: 0.450,
+    bending_stiffness_N_m: 5.158,
+    stretching_modulus_N_m: 2.53e6,
+  };
+  let customMaterial = Object.values(materialInputs).map(input => input.value);
   const solverStatus=document.querySelector('#solver-status');
   const exports=[document.querySelector('#export-json'),document.querySelector('#export-csv')];
   function renderMesh(mesh,positions) {
     const points=Array.from({length:positions.length/3},(_,i)=>positions.slice(i*3,i*3+3));
-    panels.forEach((panel,i)=>setSurface(panel,points,mesh.triangles.filter(t=>t.panel===i).flatMap(t=>t.ids)));
+    const isCardboard = materialPreset.value === 'b-flute' && modelMode.value === 'flexible';
+    if (isCardboard) kraftTexture ??= createKraftTexture();
+    panels.forEach((panel, side) => {
+      setSurface(panel, points, mesh.triangles.filter(t => t.panel === side).flatMap(t => t.ids));
+      if (isCardboard) {
+        // Use the flat panel's metric coordinates so grain follows the mesh as it bends.
+        const uv = new Float32Array(points.length * 2);
+        const beta = g.crease_angle_deg * Math.PI / 180;
+        for (const [key, index] of mesh.maps[side]) {
+          const [u, v] = key.split(',').map(Number);
+          const along = u * g.attachment_length_m + v * g.ridge_length_m * Math.cos(beta);
+          const across = v * g.ridge_length_m * Math.sin(beta);
+          uv[2 * index] = along / (mesh.resolution * size * 2);
+          uv[2 * index + 1] = across / (mesh.resolution * size * 2) + side * 0.5;
+        }
+        panel.geometry.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+      } else {
+        panel.geometry.deleteAttribute('uv');
+      }
+      const map = isCardboard ? kraftTexture : null;
+      if (panel.material.map !== map) {
+        panel.material.map = map;
+        panel.material.needsUpdate = true;
+      }
+      panel.material.color.copy(panelColors[side]);
+      if (isCardboard) panel.material.color.set(0xffffff);
+    });
     const p=sampleMarkers(mesh,positions);
     [p.left_wing_tip,p.right_wing_tip].forEach((tip,i)=>setLine(hinges[i],p.spine_origin,tip));
     hinges[2].visible=false;freeEdges.forEach(edge=>edge.visible=false);
@@ -150,12 +221,11 @@ async function start() {
     try {
       const resolution=Number(document.querySelector('#resolution').value);
       const mesh=buildMesh(config,angle,resolution);
-      const material={...defaultMaterial,mass_per_area_kg_m2:Number(document.querySelector('#mass').value),
-        bending_stiffness_N_m:Number(document.querySelector('#bending').value),stretching_modulus_N_m:Number(document.querySelector('#stretching').value)};
+      const material = { ...defaultMaterial };
       const gravity=document.querySelector('#gravity').checked?[0,0,-9.81]:[0,0,0];
-      for(const id of ['mass','bending','stretching']) {
-        const input=document.querySelector('#'+id);
+      for (const [property, input] of Object.entries(materialInputs)) {
         if(input.value===''||!input.validity.valid) throw Error('Enter valid material settings.');
+        material[property] = Number(input.value);
       }
       const half=angle*Math.PI/360;
       for(const [i,sign] of [[0,-1],[1,1]]) {
@@ -195,7 +265,30 @@ async function start() {
       exports.forEach(button=>button.disabled=false);
     }catch(error) {if(token===generation) {solverStatus.textContent=error.message;solverStatus.classList.add('unconverged');}}
   }
-  for(const id of ['model-mode','mass','bending','stretching','resolution','gravity']) document.querySelector('#'+id).addEventListener('change',()=>update(Number(exact.value)));
+  materialPreset.addEventListener('change', () => {
+    const isBFlute = materialPreset.value === 'b-flute';
+    bFluteNote.hidden = !isBFlute;
+    if (isBFlute) {
+      customMaterial = Object.values(materialInputs).map(input => input.value);
+      for (const [property, input] of Object.entries(materialInputs)) {
+        input.value = bFlute[property];
+      }
+      modelMode.value = 'flexible';
+    } else {
+      Object.values(materialInputs).forEach((input, index) => {
+        input.value = customMaterial[index];
+      });
+    }
+    update(Number(slider.value));
+  });
+  for (const input of Object.values(materialInputs)) {
+    input.addEventListener('input', () => {
+      materialPreset.value = 'custom';
+      bFluteNote.hidden = true;
+    });
+    input.addEventListener('change', () => update(Number(slider.value)));
+  }
+  for(const id of ['model-mode','resolution','gravity']) document.querySelector('#'+id).addEventListener('change',()=>update(Number(exact.value)));
   document.querySelector('#reference-overlay').addEventListener('change',event=>overlay.forEach(mesh=>mesh.visible=event.target.checked));
   function download(format) {
     if(!currentReport)return;

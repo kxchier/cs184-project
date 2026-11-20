@@ -69,6 +69,16 @@ the [rigid model](model.md). Energies are in joules and position gradients in ne
 These settings are independent. They were not measured from a particular paper
 or calculated from its thickness.
 
+### B-flute cardboard preset
+
+The preset uses 5.158 N·m from the mean machine-direction B-flute bending
+stiffness in Table 3 of [Mrówczyński et al. (2023)](https://doi.org/10.15376/biores.18.4.7611-7628).
+The stretching modulus is estimated as 2.53 × 10⁶ N/m by summing Young's
+modulus times thickness for the two flat liners in Table 2. Mass per area is
+0.450 kg/m², from a [comparable B-flute product](https://packhelp.com/help/topic/paperboard-use-manufacture-mailer-boxes/).
+The nominal 3.2 mm thickness is descriptive. The solver applies the effective
+stiffnesses in all directions and treats the panels as zero-thickness sheets.
+
 ## Mesh and folds
 
 Each panel is divided into n² triangles. The two panels share the same vertex
