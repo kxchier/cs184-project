@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 390" role="img" aria-label="Equilibrium deformation vs. opening angle">
+<rect width="640" height="390" fill="white"/>
+<g fill="#243547" font-family="system-ui,sans-serif" font-size="12">
+<text x="24" y="32" font-size="20" font-weight="600">Equilibrium deformation vs. opening angle</text>
+<path d="M83,292.00h510" stroke="#d9e2eb"/>
+<text x="75" y="296.0" text-anchor="end">0.05</text>
+<path d="M83,266.54h510" stroke="#d9e2eb"/>
+<text x="75" y="270.5362859666958" text-anchor="end">0.1</text>
+<path d="M83,207.41h510" stroke="#d9e2eb"/>
+<text x="75" y="211.4113729525892" text-anchor="end">0.5</text>
+<path d="M83,181.95h510" stroke="#d9e2eb"/>
+<text x="75" y="185.947658919285" text-anchor="end">1</text>
+<path d="M83,122.82h510" stroke="#d9e2eb"/>
+<text x="75" y="126.8227459051784" text-anchor="end">5</text>
+<path d="M83,97.36h510" stroke="#d9e2eb"/>
+<text x="75" y="101.35903187187421" text-anchor="end">10</text>
+<path d="M83,57.00h510" stroke="#d9e2eb"/>
+<text x="75" y="61.0" text-anchor="end">30</text>
+<path d="M83,57v235h510" stroke="#61768a" fill="none"/>
+<text x="83.0" y="311" text-anchor="middle">60°</text>
+<text x="253.0" y="311" text-anchor="middle">90°</text>
+<text x="423.0" y="311" text-anchor="middle">120°</text>
+<text x="593.0" y="311" text-anchor="middle">150°</text>
+<circle cx="83.00" cy="179.21" r="3.2" fill="#0072b2"/>
+<line x1="83.00" y1="179.21" x2="253.00" y2="157.01" stroke="#0072b2" stroke-width="2"/>
+<circle cx="253.00" cy="157.01" r="3.2" fill="#0072b2"/>
+<line x1="253.00" y1="157.01" x2="423.00" y2="132.88" stroke="#0072b2" stroke-width="2"/>
+<circle cx="423.00" cy="132.88" r="3.2" fill="#0072b2"/>
+<line x1="423.00" y1="132.88" x2="593.00" y2="89.10" stroke="#0072b2" stroke-width="2"/>
+<circle cx="593.00" cy="89.10" r="3.2" fill="#0072b2"/>
+<circle cx="83.00" cy="274.93" r="3.2" fill="#008060"/>
+<line x1="83.00" y1="274.93" x2="253.00" y2="254.51" stroke="#008060" stroke-width="2"/>
+<circle cx="253.00" cy="254.51" r="3.2" fill="#008060"/>
+<line x1="253.00" y1="254.51" x2="423.00" y2="237.82" stroke="#008060" stroke-width="2"/>
+<circle cx="423.00" cy="237.82" r="3.2" fill="#008060"/>
+<line x1="423.00" y1="237.82" x2="593.00" y2="218.95" stroke="#008060" stroke-width="2"/>
+<circle cx="593.00" cy="218.95" r="3.2" fill="#008060"/>
+<circle cx="83.00" cy="143.57" r="3.2" fill="#b54b00"/>
+<line x1="83.00" y1="143.57" x2="253.00" y2="117.36" stroke="#b54b00" stroke-width="2"/>
+<circle cx="253.00" cy="117.36" r="3.2" fill="#b54b00"/>
+<line x1="253.00" y1="117.36" x2="423.00" y2="66.33" stroke="#b54b00" stroke-width="2"/>
+<circle cx="423.00" cy="66.33" r="3.2" fill="#b54b00"/>
+<line x1="423.00" y1="66.33" x2="593.00" y2="88.74" stroke="#b54b00" stroke-width="2"/>
+<circle cx="593.00" cy="88.74" r="3.2" fill="#b54b00"/>
+<circle cx="83.00" cy="247.86" r="3.2" fill="#994687"/>
+<line x1="83.00" y1="247.86" x2="253.00" y2="226.55" stroke="#994687" stroke-width="2"/>
+<circle cx="253.00" cy="226.55" r="3.2" fill="#994687"/>
+<line x1="253.00" y1="226.55" x2="423.00" y2="207.97" stroke="#994687" stroke-width="2"/>
+<circle cx="423.00" cy="207.97" r="3.2" fill="#994687"/>
+<line x1="423.00" y1="207.97" x2="593.00" y2="183.11" stroke="#994687" stroke-width="2"/>
+<circle cx="593.00" cy="183.11" r="3.2" fill="#994687"/>
+<text x="338" y="332" text-anchor="middle">Book opening angle (degrees)</text>
+<text x="18" y="175" text-anchor="middle" transform="rotate(-90 18 175)">RMS deformation (mm, log scale)</text>
+<path d="M84,353h16" stroke="#0072b2" stroke-width="3"/>
+<text x="107" y="357" >0.08 kg/m² · 2e-06 N·m</text>
+<path d="M368,353h16" stroke="#008060" stroke-width="3"/>
+<text x="391" y="357" >0.08 kg/m² · 2e-05 N·m</text>
+<path d="M84,375h16" stroke="#b54b00" stroke-width="3"/>
+<text x="107" y="379" >0.16 kg/m² · 2e-06 N·m</text>
+<path d="M368,375h16" stroke="#994687" stroke-width="3"/>
+<text x="391" y="379" >0.16 kg/m² · 2e-05 N·m</text>
+</g>
+</svg>
