@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Paperweight | Butterfly viewer</title>
+  <script type="importmap">
+    {"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}
+  </script>
+  <style>
+    :root { color-scheme: dark; font: 16px/1.5 system-ui, sans-serif; background: #101721; color: #eef1f5; }
+    body { max-width: 1400px; padding: clamp(16px, 4vw, 52px); margin: auto; }
+    h1 { margin: 0; font-size: clamp(1.8rem, 4vw, 3rem); line-height: 1.1; }
+    h2 { font-size: 1.15rem; margin: 0 0 12px; }
+    p { margin: 10px 0; }
+    header { margin-bottom: 24px; }
+    header p, .hint { color: #bcc8d8; }
+    main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(285px, 340px); gap: 18px; }
+    figure { margin: 0; min-width: 0; }
+    #viewport { height: clamp(330px, 64vh, 760px); border: 1px solid #364459; border-radius: 12px; overflow: hidden; }
+    canvas { display: block; width: 100%; height: 100%; }
+    figcaption { margin-top: 8px; }
+    aside { background: #192332; border-radius: 12px; padding: 18px; }
+    form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .display-mode { grid-column: 1 / -1; }
+    select, button { display: block; width: 100%; margin-top: 4px; padding: 6px; font: inherit; }
+    button { width: auto; margin: 12px 0 0; }
+    label, .hint, dl, details { font-size: .875rem; }
+    dl { display: grid; grid-template-columns: 1fr auto; gap: 3px 12px; margin: 12px 0; }
+    dd { margin: 0; font-variant-numeric: tabular-nums; text-align: right; }
+    #status, #contact { font-weight: 650; }
+    #issue { color: #ffcd9b; }
+    [hidden] { display: none !important; }
+    @media (max-width: 770px) { main { grid-template-columns: minmax(0, 1fr); } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Paperweight · Pop-Up Butterfly</h1>
+    <p>Compare rigid placement and flexible static equilibrium at two book angles.</p>
+  </header>
+  <main>
+    <figure>
+      <div id="viewport" aria-label="Interactive butterfly and finite book pages"></div>
+      <figcaption class="hint">Drag to orbit, scroll to zoom. Light lines mark wing boundaries, gold marks the welded ridge, and teal marks page attachments.</figcaption>
+      <button id="reset" type="button" disabled>Reset camera</button>
+    </figure>
+    <aside>
+      <h2>Configuration</h2>
+      <form id="configuration">
+        <label>Book opening angle<select name="angle" disabled><option value="60">60°</option><option value="90">90°</option></select></label>
+        <label>Mesh resolution<select name="level" disabled><option value="0">Coarse</option><option value="1">Refined</option></select></label>
+        <label>Gravity<select name="gravity" disabled><option value="off">Off</option><option value="on">On</option></select></label>
+        <label class="display-mode">Display<select name="mode" disabled><option value="flexible">Flexible static equilibrium</option><option value="rigid">Rigid reference</option></select></label>
+      </form>
+      <div aria-live="polite">
+        <p id="status">Loading butterfly viewer…</p>
+        <p id="issue" hidden></p>
+        <dl id="measurements"></dl>
+        <p id="contact"></p>
+        <details id="contact-details" hidden><summary>Contact records</summary><ul id="records"></ul></details>
+      </div>
+      <p class="hint">Illustrative materials and zero-thickness pages. No contact response. Coarse and refined wing positions can differ substantially.</p>
+    </aside>
+  </main>
+  <script type="module">
+    import('./viewer/butterfly-demo.js').catch(error => {
+      document.querySelector('#status').textContent = 'Viewer unavailable: ' + error.message;
+      console.error(error);
+    });
+  </script>
+</body>
+</html>

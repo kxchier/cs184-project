@@ -35,7 +35,7 @@ The command below records all four named lobe coordinates in metres for each run
 
 The MD3 helper checks nominal finite pages and within-panel and opposing-panel contacts. Its intended-contact rules use the shared ridge IDs and pinned reference vertices. The pilot used the existing 1e−8 m baseline distance tolerance and its 0.1×, 1×, and 10× sweep, 1e−11 m attachment tolerance, and 1e−6 relative-area threshold. All eight cases had zero attachment drift, zero flagged crossings or degeneracy, and zero boundary candidates at all three tolerances. Clear means no violation detected by those checks. Artificial crossing and overlap fixtures verify that the diagnostic can flag violations on this topology. The endpoint angle checks cover rest lengths and areas and supply no collision-free claim for closure or flattening.
 
-This is a zero-thickness, static equilibrium pilot with illustrative material values and ideal hinges. It adds no contact response or crease resistance. The audited MD1–MD4 results still describe the triangular baseline. This prototype supplies no evidence of physical calibration, thick-shell accuracy, dynamic unfolding, or a new numerical method. Browser rendering and a demonstration interface are outside this milestone.
+This is a zero-thickness, static equilibrium pilot with illustrative material values and ideal hinges. It adds no contact response or crease resistance. The audited MD1–MD4 results still describe the triangular baseline. This prototype supplies no evidence of physical calibration, thick-shell accuracy, dynamic unfolding, or a new numerical method.
 
 ## Reproduction
 
@@ -72,3 +72,39 @@ for (const angle_deg of [60, 90]) for (const level of [0, 1]) {
 }
 JS
 ```
+
+## Interactive butterfly viewer
+
+From the repository root, with the pinned local Three.js 0.170.0 package already present, start the loopback server:
+
+```sh
+python3 -m http.server 8000 --bind 127.0.0.1
+```
+
+Open [the butterfly demo](http://127.0.0.1:8000/butterfly.html) in a WebGL browser. Stop the server with Control-C in its terminal. The import map uses the local package. This entry point and its modules make no external requests.
+
+Choose 60° or 90°, coarse or refined topology, gravity off or on, and rigid reference or flexible static equilibrium. Drag to orbit, scroll to zoom, and use **Reset camera** to restore the initial view. The outlined pages are the finite quads used by the diagnostic. Wing surfaces follow indexed mechanical triangles. Lines follow the two actual boundary loops, the fixed page attachments, and the welded ridge.
+
+Each change synchronously builds the mesh, optionally solves at the selected gravity, samples the named material points, checks the displayed positions, and replaces the scene and readouts. The controls can briefly block during a solve. A failed solve displays the rigid reference and labels any numerical metadata as belonging to the failed attempt. The rigid mode skips equilibrium solving and reports no solver residual or energy.
+
+The shared browser-safe MD3 diagnostic checks the displayed geometry at 0.1×, 1× (nominal), and 10× the pilot distance tolerance. Its exemptions cover pinned page attachments and shared mesh features. Clearance requires a complete report with all three sweeps, both record arrays in each sweep, and valid diagnostic metadata. An exception or malformed report is shown as unavailable. The minimum relative area must agree with the reported degenerate triangle IDs at the checker’s inclusive area threshold. The reported status and tolerance sensitivity must also agree with the attachment drift and sweep evidence. Well-formed witnesses already reported by an incomplete check remain visible with their available provenance.
+
+Each contact detail identifies the pair, geometry category, contact kind, tolerance multiplier, and confidence. A contact of the same kind on the same pair in all three sweeps is reported as confirmed. A sweep-dependent contact or boundary candidate is reported as uncertain and does not establish penetration. A separate confirmed violation remains visible when uncertainty is also present. Red marks confirmed witnesses. Amber marks candidate, tolerance-dependent, or incomplete evidence. Numerical convergence and geometric checking have separate readouts.
+
+The viewer compares static equilibria with illustrative material parameters. It supplies no physical calibration, collision response, crease resistance, continuous unfolding, or evidence of spatial convergence. The gravity-on coarse/refined landmark discrepancies of 5.338 mm at 60° and 7.940 mm at 90° persisted at tighter force-residual tolerances. Use the eight-case reproduction command above to verify the numerical configurations independently of WebGL.
+
+### Browser smoke test
+
+The Codex in-app browser on macOS rendered the local WebGL scene. The two page outlines, two wing silhouettes, and shared ridge were visible during orbit. Scroll zoom and Reset camera changed and restored the view. The browser console reported no errors or warnings during the tested interactions.
+
+| Opening | Mesh | Gravity | Iterations | Residual (N/m²) | Final energy (J) | Maximum lobe shift (mm) |
+|---:|---|---|---:|---:|---:|---:|
+| 60° | Coarse | Off | 0 | 3.62730e−12 | 1.32757e−32 | 0.000 |
+| 60° | Coarse | On | 235 | 3.10293e−3 | 3.15024e−4 | 11.024 |
+| 60° | Refined | On | 1,034 | 4.79480e−3 | 3.15962e−4 | 5.705 |
+| 90° | Coarse | On | 429 | 4.09653e−3 | 2.65492e−4 | 17.158 |
+| 90° | Refined | On | 723 | 4.14244e−3 | 2.67892e−4 | 9.287 |
+
+All five displayed converged static equilibrium and no violation detected by the tested checks. At 90° refined with gravity on, switching to rigid reference cleared the solver readouts and gave zero lobe shift. Switching back restored the corresponding flexible readouts. Failure, unavailable diagnostics, and contact uncertainty were exercised with unit-test fixtures.
+
+The R1 loopback rerun reproduced the five rows above and the remaining three gravity-off configurations. Both wings and the pages were visible, and the widened display selector showed the full mode label. Rigid mode cleared the solver metrics and returning to flexible mode restored the current values. The captured console had no warnings or errors. A separate in-memory viewer harness verified the contact-details row for a real 10×-only opposing-wing fixture, preservation of that row with an incomplete report, and removal of stale details when the checker threw.
